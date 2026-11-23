@@ -9,7 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { verifyAccessToken } from '@/lib/auth/jwt';
+import { getAuthenticatedUserId } from '@/lib/auth/session';
 import {
   TrackingPayload,
   FacebookConversionAPIRequest,
@@ -166,14 +166,12 @@ async function enrichCustomerPiiFromServer(input: {
   fbp?: string;
 }): Promise<EnrichedCustomerPii> {
   try {
-    // 1. Logged-in user via auth_token JWT cookie
-    const token =
-      input.request.cookies.get('auth_token')?.value ||
-      input.request.headers.get('authorization')?.replace(/^Bearers+/i, '');
+    // 1. Logged-in user via unified NextAuth session
+    const resolvedUserId = await getAuthenticatedUserId(input.request);
 
-    if (token) {
-      const auth = await verifyAccessToken(token);
-      if (auth?.userId) {
+    if (resolvedUserId) {
+      const auth = { userId: resolvedUserId };
+      if (auth.userId) {
         const cacheKey = 'u:' + auth.userId;
         const cached = readEnrichCache(cacheKey);
         if (cached) return cached;

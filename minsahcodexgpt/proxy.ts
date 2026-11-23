@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 import { verifyAdminAccessToken } from '@/lib/auth/jwt';
 import { sanitizeTrackingPath, sanitizeTrackingUrl } from '@/lib/tracking/sanitize-url';
 import { normalizeMetaExternalIdValue } from '@/lib/tracking/meta-external-id';
@@ -245,7 +246,7 @@ function createSecureResponse(response: NextResponse): NextResponse {
       "frame-src 'self' https://www.facebook.com; " +
       "frame-ancestors 'none'; " +
       "base-uri 'self'; " +
-      "form-action 'self' https://www.facebook.com; " +
+      "form-action 'self' https://accounts.google.com https://www.facebook.com; " +
       "upgrade-insecure-requests;"
     );
   }
@@ -335,22 +336,23 @@ export async function proxy(request: NextRequest) {
     return createSecureResponse(NextResponse.redirect(loginUrl));
   }
 
-  // Protect user account routes
+  // Protect user account routes with verified NextAuth JWT
   if (pathname.startsWith('/account')) {
-    if (pathname === '/login' || pathname === '/register') {
-      return createSecureResponse(NextResponse.next());
-    }
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    }).catch(() => null);
 
-    const sessionToken = request.cookies.get('next-auth.session-token') ||
-                         request.cookies.get('__Secure-next-auth.session-token');
-
-    if (!sessionToken) {
+    if (!token?.userId || token.revoked) {
       const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('redirect', pathname);
+      const returnTarget = `${pathname}${request.nextUrl.search}`;
+      loginUrl.searchParams.set('redirect', returnTarget);
       return createSecureResponse(NextResponse.redirect(loginUrl));
     }
 
-    return createSecureResponse(NextResponse.next());
+    const accountRes = NextResponse.next();
+    accountRes.headers.set('Cache-Control', 'private, no-store, no-cache, must-revalidate');
+    return createSecureResponse(accountRes);
   }
 
   // All other routes

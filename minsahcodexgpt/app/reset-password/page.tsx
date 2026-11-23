@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
 import { ResetPasswordClient } from '@/components/reset-password-client';
-import { LoadingState } from '@/components/ui/LoadingState';
 
 interface ResetPasswordPageProps {
   searchParams: Promise<{ token?: string }>;
@@ -13,8 +13,8 @@ export default async function ResetPasswordPage({ searchParams }: ResetPasswordP
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-screen items-center justify-center bg-minsah-surface-page px-4">
-          <LoadingState label="Loading password reset…" />
+        <main className="flex min-h-screen items-center justify-center bg-[#F4F3EF] px-4">
+          <Loader2 className="h-6 w-6 animate-spin text-[#1c3a13]" />
         </main>
       }
     >

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { BehaviorTracker } from '@/lib/tracking/behavior';
 import { TRACKING_EVENTS } from '@/types/tracking';
 import prisma from '@/lib/prisma';
-import { verifyAccessToken } from '@/lib/auth/jwt';
+import { getAuthenticatedUserId } from '@/lib/auth/session';
 import { requireAdminPermission } from '@/app/api/admin/_utils';
 import { ADMIN_PERMISSIONS } from '@/lib/auth/admin-permissions';
 import { buildMetaCatalogData } from '@/lib/tracking/meta-content-id';
@@ -67,14 +67,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ✅ Get user ID if authenticated
-    let userId: string | null = null;
-    const token = request.cookies.get('auth_token')?.value ||
-      request.headers.get('authorization')?.replace('Bearer ', '');
-
-    if (token) {
-      const payload = await verifyAccessToken(token);
-      userId = payload?.userId ?? null;
-    }
+    const userId = await getAuthenticatedUserId(request);
 
     const duplicate = await isDuplicateClick({
       query: click.query,

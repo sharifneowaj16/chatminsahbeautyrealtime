@@ -9,12 +9,8 @@ import {
   type KeyboardEvent,
 } from 'react';
 import { useRouter } from 'next/navigation';
-
+import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
 import { AuthShell } from '@/components/auth/AuthShell';
-import { Alert } from '@/components/ui/Alert';
-import { Button } from '@/components/ui/Button';
-import { Field } from '@/components/ui/Field';
-import { Spinner } from '@/components/ui/Spinner';
 import { useToast } from '@/components/ui/ToastProvider';
 
 interface VerifyOTPClientProps {
@@ -86,7 +82,7 @@ export function VerifyOTPClient({ email }: VerifyOTPClientProps) {
       });
       const data = await response.json();
 
-      if (response.ok) router.push(`/reset-password?token=${data.token}`);
+      if (response.ok) router.push(`/reset-password?token=${encodeURIComponent(data.token)}`);
       else setError(data.error || 'The verification code is invalid.');
     } catch {
       setError('Network error. Please try again.');
@@ -131,60 +127,75 @@ export function VerifyOTPClient({ email }: VerifyOTPClientProps) {
       description={
         <>
           Enter the six-digit code sent to{' '}
-          <strong className="text-minsah-text-primary">{email || 'your email'}</strong>.
+          <strong className="text-[#062402]">{email || 'your email'}</strong>.
         </>
       }
       backHref="/forgot-password"
       backLabel="Back"
     >
       {error ? (
-        <Alert tone="danger" announcement="assertive" className="mb-5">
-          {error}
-        </Alert>
+        <div
+          role="alert"
+          className="mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700"
+        >
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>{error}</span>
+        </div>
       ) : null}
 
-      <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-        <Field
-          controlId="otp-0"
-          label="Verification code"
-          description="Paste the full code or type one digit in each box."
-          error={error || undefined}
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+        <div className="grid grid-cols-6 gap-2" role="group" aria-label="Six-digit verification code">
+          {otp.map((digit, index) => (
+            <input
+              key={index}
+              id={`otp-${index}`}
+              ref={(element) => {
+                inputRefs.current[index] = element;
+              }}
+              type="text"
+              inputMode="numeric"
+              autoComplete={index === 0 ? 'one-time-code' : 'off'}
+              maxLength={1}
+              value={digit}
+              onChange={(event) => handleChange(index, event.target.value)}
+              onKeyDown={(event) => handleKeyDown(index, event)}
+              onPaste={index === 0 ? handlePaste : undefined}
+              disabled={loading}
+              aria-label={`Digit ${index + 1}`}
+              className="h-12 w-full rounded-xl border border-[#E2DED8] bg-white text-center text-lg font-bold text-[#062402] transition focus:border-[#1c3a13] focus:outline-none focus:ring-2 focus:ring-[#1c3a13]/20"
+            />
+          ))}
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading || otpCode.length !== 6}
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#1c3a13] px-4 text-sm font-bold text-white shadow-sm transition hover:bg-[#152e0f] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <div className="grid grid-cols-6 gap-2" role="group" aria-label="Six-digit verification code">
-            {otp.map((digit, index) => (
-              <input
-                key={index}
-                id={`otp-${index}`}
-                ref={(element) => {
-                  inputRefs.current[index] = element;
-                }}
-                type="text"
-                inputMode="numeric"
-                autoComplete={index === 0 ? 'one-time-code' : 'off'}
-                maxLength={1}
-                value={digit}
-                onChange={(event) => handleChange(index, event.target.value)}
-                onKeyDown={(event) => handleKeyDown(index, event)}
-                onPaste={index === 0 ? handlePaste : undefined}
-                disabled={loading}
-                aria-label={`Digit ${index + 1}`}
-                className="minsah-field h-14 min-w-0 rounded-xl px-0 text-center text-xl font-black"
-              />
-            ))}
-          </div>
-        </Field>
+          {loading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin text-[#D4F6A2]" />
+              <span>Verifying...</span>
+            </>
+          ) : (
+            <>
+              <CheckCircle2 className="h-4 w-4 text-[#D4F6A2]" />
+              <span>Verify Code</span>
+            </>
+          )}
+        </button>
 
-        <Button type="submit" fullWidth size="lg" disabled={loading || otpCode.length !== 6} aria-busy={loading || undefined}>
-          {loading ? <Spinner size="sm" decorative /> : null}
-          {loading ? 'Verifying…' : 'Verify code'}
-        </Button>
-
-        <div className="text-center text-sm text-minsah-text-muted">
+        <div className="text-center text-xs text-[#5A615D]">
           Did not receive the email?{' '}
-          <Button type="button" variant="ghost" size="sm" onClick={handleResendOTP} disabled={resending || loading}>
-            {resending ? <Spinner size="sm" decorative /> : null}
-            {resending ? 'Resending…' : 'Resend code'}
-          </Button>
+          <button
+            type="button"
+            onClick={() => void handleResendOTP()}
+            disabled={resending || loading}
+            className="inline-flex items-center gap-1 font-bold text-[#4b6723] hover:underline disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${resending ? 'animate-spin' : ''}`} />
+            <span>{resending ? 'Resending...' : 'Resend code'}</span>
+          </button>
         </div>
       </form>
     </AuthShell>

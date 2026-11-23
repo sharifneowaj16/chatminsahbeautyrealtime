@@ -1,12 +1,13 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { SessionProvider, useSession, signIn, signOut } from 'next-auth/react';
 import { trackCompleteRegistrationEvent } from '@/lib/tracking/events';
+import { sanitizeRedirectPath } from '@/lib/auth/redirect';
 
-interface User {
+export interface User {
   id: string;
-  email: string;
+  email: string | null;
   firstName: string | null;
   lastName: string | null;
   phone: string | null;
@@ -30,26 +31,8 @@ interface User {
   };
 }
 
-interface AuthContextType {
-  user: User | null;
-  loading: boolean;
-  error: string | null;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  loginWithProvider: (provider: string) => void;
-  logout: () => Promise<void>;
-  register: (userData: RegisterData) => Promise<{ success: boolean; error?: string }>;
-  updateUser: (userData: Partial<User>) => Promise<boolean>;
-  updatePreferences: (preferences: Partial<User['preferences']>) => Promise<boolean>;
-  changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
-  uploadAvatar: (file: File) => Promise<boolean>;
-  hasPermission: (permission: string) => boolean;
-  isInRole: (role: string) => boolean;
-  refreshToken: () => Promise<boolean>;
-  clearError: () => void;
-}
-
-interface RegisterData {
-  email: string;
+export interface RegisterData {
+  email?: string;
   name: string;
   password: string;
   phone?: string;
@@ -58,9 +41,28 @@ interface RegisterData {
   referralCode?: string;
 }
 
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  error: string | null;
+  login: (identifier: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  loginWithOtp: (phone: string, otpProof: string) => Promise<{ success: boolean; error?: string }>;
+  loginWithProvider: (provider: 'google' | 'facebook' | string, callbackUrl?: string) => void;
+  logout: () => Promise<void>;
+  register: (userData: RegisterData) => Promise<{ success: boolean; error?: string; code?: string }>;
+  updateUser: (userData: Partial<User>) => Promise<boolean>;
+  updatePreferences: (preferences: Partial<NonNullable<User['preferences']>>) => Promise<boolean>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
+  uploadAvatar: (file: File) => Promise<boolean>;
+  hasPermission: (permission: string) => boolean;
+  isInRole: (role: string) => boolean;
+  refreshUser: () => Promise<boolean>;
+  refreshToken: () => Promise<boolean>;
+  clearError: () => void;
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Role-based permissions
 const rolePermissions: Record<string, string[]> = {
   customer: [
     'browse_products',
@@ -72,7 +74,7 @@ const rolePermissions: Record<string, string[]> = {
     'manage_addresses',
     'manage_wishlist',
     'view_orders',
-    'track_orders'
+    'track_orders',
   ],
   vip: [
     'browse_products',
@@ -88,7 +90,7 @@ const rolePermissions: Record<string, string[]> = {
     'exclusive_deals',
     'early_access',
     'free_shipping',
-    'priority_support'
+    'priority_support',
   ],
   premium: [
     'browse_products',
@@ -107,37 +109,23 @@ const rolePermissions: Record<string, string[]> = {
     'priority_support',
     'personal_stylist',
     'birthday_rewards',
-    'anniversary_rewards'
-  ]
+    'anniversary_rewards',
+  ],
 };
 
 function AuthProviderContent({ children }: { children: React.ReactNode }) {
-  const { data: session, status } = useSession();
+  const { data: session, status, update: updateSession } = useSession();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const signingOutRef = useRef(false);
 
   const clearError = useCallback(() => {
     setError(null);
   }, []);
 
-  // Refresh token function
-  const refreshToken = useCallback(async (): Promise<boolean> => {
-    try {
-      const response = await fetch('/api/auth/refresh', {
-        method: 'POST',
-        credentials: 'include',
-        cache: 'no-store',
-      });
-
-      return response.ok;
-    } catch {
-      return false;
-    }
-  }, []);
-
-  // Fetch user profile from API
   const fetchUserProfile = useCallback(async (): Promise<boolean> => {
+    if (signingOutRef.current) return false;
     try {
       const response = await fetch('/api/auth/me', {
         credentials: 'include',
@@ -146,96 +134,130 @@ function AuthProviderContent({ children }: { children: React.ReactNode }) {
 
       if (response.ok) {
         const data = await response.json();
-        setUser(data.user);
-        return true;
-      } else if (response.status === 401) {
-        // Try to refresh the token
-        const refreshed = await refreshToken();
-        if (refreshed) {
-          // Retry fetching profile
-          const retryResponse = await fetch('/api/auth/me', {
-            credentials: 'include',
-            cache: 'no-store',
-          });
-          if (retryResponse.ok) {
-            const data = await retryResponse.json();
-            setUser(data.user);
-            return true;
-          }
-        }
-        setUser(null);
-        return false;
+        setUser(data.user ?? null);
+        return Boolean(data.user);
       }
+
+      setUser(null);
       return false;
     } catch {
       setUser(null);
       return false;
     }
-  }, [refreshToken]);
+  }, []);
 
-  // Initialize auth state
+  const sessionUserId = session?.user?.id || '';
+  const sessionRevoked = Boolean((session as { revoked?: boolean } | null)?.revoked);
+
   useEffect(() => {
     if (status === 'loading') return;
 
-    const initAuth = async () => {
-      setLoading(true);
+    let active = true;
 
-      // If using NextAuth session
-      if (session?.user) {
-        await fetchUserProfile();
-      } else {
-        // Check for custom JWT auth
-        await fetchUserProfile();
+    const syncAuth = async () => {
+      if (status !== 'authenticated' || !sessionUserId || sessionRevoked) {
+        if (active) {
+          setUser(null);
+          setLoading(false);
+        }
+        return;
       }
 
-      setLoading(false);
+      setLoading(true);
+      await fetchUserProfile();
+      if (active) {
+        setLoading(false);
+      }
     };
 
-    initAuth();
-  }, [session, status, fetchUserProfile]);
+    void syncAuth();
 
-  // Login with email/password
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    setLoading(true);
-    setError(null);
+    return () => {
+      active = false;
+    };
+  }, [status, sessionUserId, sessionRevoked, fetchUserProfile]);
 
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email, password }),
-      });
+  const login = useCallback(
+    async (identifier: string, password: string): Promise<{ success: boolean; error?: string }> => {
+      setLoading(true);
+      setError(null);
 
-      const data = await response.json();
+      try {
+        const result = await signIn('credentials', {
+          email: identifier.trim(),
+          password,
+          redirect: false,
+        });
 
-      if (response.ok) {
-        const profileLoaded = await fetchUserProfile();
-        if (!profileLoaded) {
-          setUser(data.user);
+        if (result?.ok && !result.error) {
+          await updateSession().catch(() => {});
+          await fetchUserProfile();
+          return { success: true };
         }
-        return { success: true };
-      } else {
-        const errorMessage = data.error || 'Login failed';
+
+        const errorMessage =
+          result?.error === 'CredentialsSignin'
+            ? 'Invalid email/phone or password.'
+            : result?.error || 'Login failed. Please try again.';
         setError(errorMessage);
         return { success: false, error: errorMessage };
+      } catch {
+        const errorMessage = 'Network error. Please try again.';
+        setError(errorMessage);
+        return { success: false, error: errorMessage };
+      } finally {
+        setLoading(false);
       }
-    } catch {
-      const errorMessage = 'Network error. Please try again.';
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [fetchUserProfile, updateSession]
+  );
 
-  // Login with OAuth provider
-  const loginWithProvider = (provider: string) => {
-    signIn(provider, { callbackUrl: '/' });
-  };
+  const loginWithOtp = useCallback(
+    async (phone: string, otpProof: string): Promise<{ success: boolean; error?: string }> => {
+      setLoading(true);
+      setError(null);
 
-  // Logout (always clears both custom JWT cookies and NextAuth session)
+      try {
+        const result = await signIn('phone-otp', {
+          phone: phone.trim(),
+          otpProof,
+          redirect: false,
+        });
+
+        if (result?.ok && !result.error) {
+          await updateSession().catch(() => {});
+          await fetchUserProfile();
+          return { success: true };
+        }
+
+        const errorMessage =
+          result?.error === 'CredentialsSignin'
+            ? 'Verification expired. Please request a new code.'
+            : result?.error || 'Unable to verify your phone login.';
+        setError(errorMessage);
+        return { success: false, error: errorMessage };
+      } catch {
+        const errorMessage = 'Network error. Please try again.';
+        setError(errorMessage);
+        return { success: false, error: errorMessage };
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchUserProfile, updateSession]
+  );
+
+  const loginWithProvider = useCallback((provider: string, callbackUrl?: string) => {
+    const currentPath =
+      typeof window !== 'undefined'
+        ? `${window.location.pathname}${window.location.search}`
+        : '/account';
+    const safeTarget = sanitizeRedirectPath(callbackUrl || currentPath, '/account');
+    void signIn(provider, { callbackUrl: safeTarget });
+  }, []);
+
   const logout = useCallback(async (): Promise<void> => {
+    signingOutRef.current = true;
     setLoading(true);
 
     try {
@@ -244,7 +266,7 @@ function AuthProviderContent({ children }: { children: React.ReactNode }) {
         credentials: 'include',
         cache: 'no-store',
       }).catch((err) => {
-        console.error('Custom logout error:', err);
+        console.error('Logout API error:', err);
       });
 
       await signOut({ redirect: false }).catch((err) => {
@@ -253,50 +275,68 @@ function AuthProviderContent({ children }: { children: React.ReactNode }) {
     } finally {
       setUser(null);
       setLoading(false);
+      signingOutRef.current = false;
     }
   }, []);
 
-  // Register new user
-  const register = async (userData: RegisterData): Promise<{ success: boolean; error?: string }> => {
-    setLoading(true);
-    setError(null);
+  const register = useCallback(
+    async (userData: RegisterData): Promise<{ success: boolean; error?: string; code?: string }> => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(userData),
-      });
+      try {
+        const response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          cache: 'no-store',
+          body: JSON.stringify(userData),
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (response.ok) {
-        trackCompleteRegistrationEvent({ method: 'email', status: 'success' });
-        const profileLoaded = await fetchUserProfile();
-        if (!profileLoaded) {
-          setUser(data.user);
-        }
-        return { success: true };
-      } else {
-        const errorMessage = data.error || 'Registration failed';
-        if (data.details) {
-          setError(`${errorMessage}: ${data.details.join(', ')}`);
-        } else {
+        if (!response.ok) {
+          const errorMessage = Array.isArray(data.details)
+            ? data.details[0] || data.error || 'Registration failed'
+            : data.error || 'Registration failed';
           setError(errorMessage);
+          return { success: false, error: errorMessage, code: data.code };
         }
-        return { success: false, error: errorMessage };
-      }
-    } catch {
-      const errorMessage = 'Network error. Please try again.';
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  // Update user profile
+        trackCompleteRegistrationEvent({
+          method: userData.email ? 'email' : 'phone',
+          status: 'success',
+        });
+
+        const loginIdentifier = (userData.email || userData.phone || '').trim();
+        if (loginIdentifier && userData.password) {
+          const signInResult = await signIn('credentials', {
+            email: loginIdentifier,
+            password: userData.password,
+            redirect: false,
+          });
+          if (signInResult?.ok && !signInResult.error) {
+            await updateSession().catch(() => {});
+            await fetchUserProfile();
+          }
+        }
+
+        return { success: true };
+      } catch {
+        const errorMessage = 'Network error. Please try again.';
+        setError(errorMessage);
+        return { success: false, error: errorMessage };
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchUserProfile, updateSession]
+  );
+
+  const refreshToken = useCallback(async (): Promise<boolean> => {
+    return false;
+  }, []);
+
   const updateUser = async (userData: Partial<User>): Promise<boolean> => {
     if (!user) return false;
 
@@ -319,8 +359,9 @@ function AuthProviderContent({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Update preferences
-  const updatePreferences = async (preferences: Partial<User['preferences']>): Promise<boolean> => {
+  const updatePreferences = async (
+    preferences: Partial<NonNullable<User['preferences']>>
+  ): Promise<boolean> => {
     if (!user) return false;
 
     try {
@@ -333,7 +374,7 @@ function AuthProviderContent({ children }: { children: React.ReactNode }) {
 
       if (response.ok) {
         const data = await response.json();
-        setUser(prev => prev ? { ...prev, preferences: data.preferences } : null);
+        setUser((prev) => (prev ? { ...prev, preferences: data.preferences } : null));
         return true;
       }
       return false;
@@ -342,7 +383,6 @@ function AuthProviderContent({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Change password
   const changePassword = async (
     currentPassword: string,
     newPassword: string
@@ -359,15 +399,13 @@ function AuthProviderContent({ children }: { children: React.ReactNode }) {
 
       if (response.ok) {
         return { success: true };
-      } else {
-        return { success: false, error: data.error || 'Failed to change password' };
       }
+      return { success: false, error: data.error || 'Failed to change password' };
     } catch {
       return { success: false, error: 'Network error. Please try again.' };
     }
   };
 
-  // Upload avatar
   const uploadAvatar = async (file: File): Promise<boolean> => {
     if (!user) return false;
 
@@ -383,7 +421,7 @@ function AuthProviderContent({ children }: { children: React.ReactNode }) {
 
       if (response.ok) {
         const data = await response.json();
-        setUser(prev => prev ? { ...prev, avatar: data.avatarUrl } : null);
+        setUser((prev) => (prev ? { ...prev, avatar: data.avatarUrl } : null));
         return true;
       }
       return false;
@@ -392,13 +430,11 @@ function AuthProviderContent({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Check permission
   const hasPermission = (permission: string): boolean => {
     if (!user) return false;
     return rolePermissions[user.role]?.includes(permission) || false;
   };
 
-  // Check role
   const isInRole = (role: string): boolean => {
     return user?.role === role;
   };
@@ -408,6 +444,7 @@ function AuthProviderContent({ children }: { children: React.ReactNode }) {
     loading,
     error,
     login,
+    loginWithOtp,
     loginWithProvider,
     logout,
     register,
@@ -417,23 +454,18 @@ function AuthProviderContent({ children }: { children: React.ReactNode }) {
     uploadAvatar,
     hasPermission,
     isInRole,
+    refreshUser: fetchUserProfile,
     refreshToken,
     clearError,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
-    <SessionProvider>
-      <AuthProviderContent>
-        {children}
-      </AuthProviderContent>
+    <SessionProvider refetchOnWindowFocus={false}>
+      <AuthProviderContent>{children}</AuthProviderContent>
     </SessionProvider>
   );
 }
@@ -443,6 +475,7 @@ const defaultAuthFallback: AuthContextType = {
   loading: false,
   error: null,
   login: async () => ({ success: false, error: 'AuthProvider not found' }),
+  loginWithOtp: async () => ({ success: false, error: 'AuthProvider not found' }),
   loginWithProvider: () => {},
   logout: async () => {},
   register: async () => ({ success: false, error: 'AuthProvider not found' }),
@@ -452,6 +485,7 @@ const defaultAuthFallback: AuthContextType = {
   uploadAvatar: async () => false,
   hasPermission: () => false,
   isInRole: () => false,
+  refreshUser: async () => false,
   refreshToken: async () => false,
   clearError: () => {},
 };
@@ -464,13 +498,11 @@ export function useAuth() {
   return context;
 }
 
-// Hook for checking user authentication status
 export function useIsAuthenticated() {
   const { user, loading } = useAuth();
   return { isAuthenticated: !!user, loading };
 }
 
-// Hook for user permissions
 export function useUserPermissions() {
   const { hasPermission, isInRole } = useAuth();
 
@@ -494,28 +526,17 @@ export function useUserPermissions() {
     getsAnniversaryRewards: hasPermission('anniversary_rewards'),
     isVip: isInRole('vip'),
     isPremium: isInRole('premium'),
-    isCustomer: isInRole('customer')
+    isCustomer: isInRole('customer'),
   };
 }
 
-// Hook for loyalty points
 export function useLoyaltyPoints() {
-  const { user, updateUser } = useAuth();
-
-  const addPoints = async (points: number) => {
-    if (!user) return false;
-    return updateUser({ loyaltyPoints: user.loyaltyPoints + points });
-  };
-
-  const redeemPoints = async (points: number) => {
-    if (!user || user.loyaltyPoints < points) return false;
-    return updateUser({ loyaltyPoints: user.loyaltyPoints - points });
-  };
+  const { user } = useAuth();
 
   return {
     currentPoints: user?.loyaltyPoints || 0,
-    addPoints,
-    redeemPoints,
-    canRedeem: (points: number) => !!(user && user.loyaltyPoints >= points)
+    addPoints: async () => false,
+    redeemPoints: async () => false,
+    canRedeem: (points: number) => !!(user && user.loyaltyPoints >= points),
   };
 }

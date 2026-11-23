@@ -1,16 +1,11 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
-import { verifyAccessToken } from '@/lib/auth/jwt';
+import { getAuthenticatedUserId } from '@/lib/auth/session';
 import { AddressType } from '@/generated/prisma/client';
 
 async function getUserId(request: NextRequest): Promise<string | null> {
-  const token =
-    request.cookies.get('auth_token')?.value ||
-    request.headers.get('authorization')?.replace('Bearer ', '');
-  if (!token) return null;
-  const payload = await verifyAccessToken(token);
-  return payload?.userId ?? null;
+  return getAuthenticatedUserId(request);
 }
 
 // GET /api/addresses — fetch all addresses for logged-in user

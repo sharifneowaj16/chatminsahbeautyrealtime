@@ -4,12 +4,15 @@ const OTP_PREFIX = 'otp:';
 const RESET_PREFIX = 'reset:';
 
 function getPasswordResetSecret(): string {
-  return (
+  const secret =
     process.env.PASSWORD_RESET_TOKEN_SECRET?.trim() ||
-    process.env.JWT_SECRET?.trim() ||
     process.env.NEXTAUTH_SECRET?.trim() ||
-    'minsah-password-reset-development-fallback-secret'
-  );
+    process.env.JWT_SECRET?.trim();
+  if (secret) return secret;
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('PASSWORD_RESET_TOKEN_SECRET, NEXTAUTH_SECRET, or JWT_SECRET must be set in production');
+  }
+  return 'minsah-password-reset-development-fallback-secret';
 }
 
 function hmac(value: string): string {

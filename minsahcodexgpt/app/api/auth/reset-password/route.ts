@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { checkRateLimit } from '@/lib/cache/redis';
 import { createLogger } from '@/lib/logger';
 import { hashPassword, validatePassword } from '@/lib/auth/password';
+import { invalidateUserSessionGuardCache } from '@/lib/auth/session-revocation';
 import {
   hashPasswordResetToken,
   isResetTokenHash,
@@ -133,7 +134,11 @@ export async function POST(request: NextRequest) {
     await prisma.$transaction([
       prisma.user.update({
         where: { id: user.id },
-        data: { passwordHash },
+        data: {
+          passwordHash,
+          passwordChangedAt: new Date(),
+          tokenVersion: { increment: 1 },
+        },
       }),
       prisma.passwordResetToken.update({
         where: { id: resetToken.id },
@@ -151,6 +156,8 @@ export async function POST(request: NextRequest) {
         data: { revoked: true },
       }),
     ]);
+
+    await invalidateUserSessionGuardCache(user.id);
 
     logger.info('Password reset successful', { userId: user.id });
 

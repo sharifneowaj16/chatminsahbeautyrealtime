@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthenticatedUserId } from '@/app/api/auth/_utils';
 import { hashPassword, validatePassword, verifyPassword } from '@/lib/auth/password';
+import { invalidateUserSessionGuardCache } from '@/lib/auth/session-revocation';
 
 export async function POST(request: NextRequest) {
   try {
@@ -62,8 +63,13 @@ export async function POST(request: NextRequest) {
 
     await prisma.user.update({
       where: { id: userId },
-      data: { passwordHash },
+      data: {
+        passwordHash,
+        passwordChangedAt: new Date(),
+        tokenVersion: { increment: 1 },
+      },
     });
+    await invalidateUserSessionGuardCache(userId);
 
     return NextResponse.json({ message: 'Password updated successfully' });
   } catch (error) {

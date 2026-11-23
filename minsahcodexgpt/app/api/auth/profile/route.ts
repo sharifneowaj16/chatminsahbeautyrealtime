@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthenticatedUserId, serializeUserProfile, userProfileSelect } from '@/app/api/auth/_utils';
+import { normalizeBangladeshPhoneNumber } from '@/lib/phone';
 
 const ALLOWED_GENDERS = new Set(['male', 'female', 'other']);
 
@@ -36,12 +37,23 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid gender value' }, { status: 400 });
     }
 
+    let normalizedPhone: string | null = null;
+    if (phone) {
+      normalizedPhone = normalizeBangladeshPhoneNumber(phone);
+      if (!normalizedPhone) {
+        return NextResponse.json(
+          { error: 'Please enter a valid 11-digit Bangladesh mobile number (01XXXXXXXXX).' },
+          { status: 400 }
+        );
+      }
+    }
+
     const user = await prisma.user.update({
       where: { id: userId },
       data: {
         firstName,
         lastName: lastName || null,
-        phone: phone || null,
+        phone: normalizedPhone,
         dateOfBirth,
         gender: rawGender || null,
       },

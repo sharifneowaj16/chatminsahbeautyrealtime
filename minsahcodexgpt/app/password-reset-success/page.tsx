@@ -3,8 +3,8 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { CheckCircle2 } from 'lucide-react';
 import { AuthShell } from '@/components/auth/AuthShell';
-import { SuccessState } from '@/components/ui/SuccessState';
 
 export default function PasswordResetSuccessPage() {
   const router = useRouter();
@@ -19,18 +19,20 @@ export default function PasswordResetSuccessPage() {
 
   return (
     <AuthShell title="Password updated" description="Your password has been changed successfully.">
-      <SuccessState
-        title="Update complete"
-        description="Redirecting you to the login page…"
-        action={
-          <Link
-            href="/login"
-            className="minsah-control inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-minsah-action-primary px-5 py-3 font-bold text-minsah-text-inverse hover:bg-minsah-action-primary-hover"
-          >
-            Back to Login
-          </Link>
-        }
-      />
+      <div className="space-y-4 text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#EAF7D8] text-[#1c3a13]">
+          <CheckCircle2 className="h-6 w-6 text-[#4b6723]" />
+        </div>
+        <p className="text-xs text-[#5A615D]">
+          All previous sessions have been signed out for security. Redirecting to sign in...
+        </p>
+        <Link
+          href="/login"
+          className="flex h-11 w-full items-center justify-center rounded-full bg-[#1c3a13] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#152e0f]"
+        >
+          Back to Sign In
+        </Link>
+      </div>
     </AuthShell>
   );
 }

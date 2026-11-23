@@ -2,31 +2,11 @@
 
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff, LockKeyhole } from 'lucide-react';
-
+import { AlertCircle, CheckCircle2, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { AuthShell } from '@/components/auth/AuthShell';
-import { Alert } from '@/components/ui/Alert';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Spinner } from '@/components/ui/Spinner';
 
 interface ResetPasswordClientProps {
   token: string;
-}
-
-function PasswordToggle({ shown, onToggle, label }: { shown: boolean; onToggle: () => void; label: string }) {
-  return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon"
-      onClick={onToggle}
-      aria-label={`${shown ? 'Hide' : 'Show'} ${label}`}
-      aria-pressed={shown}
-    >
-      {shown ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-    </Button>
-  );
 }
 
 export function ResetPasswordClient({ token }: ResetPasswordClientProps) {
@@ -82,61 +62,92 @@ export function ResetPasswordClient({ token }: ResetPasswordClientProps) {
       backLabel="Back"
     >
       {error ? (
-        <Alert tone="danger" announcement="assertive" className="mb-5">
-          {error}
-        </Alert>
+        <div
+          role="alert"
+          className="mb-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700"
+        >
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{error}</span>
+        </div>
       ) : null}
 
-      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-        <Input
-          id="newPassword"
-          name="newPassword"
-          type={showNewPassword ? 'text' : 'password'}
-          label="New password"
-          description="Use at least 8 characters."
-          required
-          autoComplete="new-password"
-          value={newPassword}
-          onChange={(event) => setNewPassword(event.target.value)}
-          disabled={loading}
-          placeholder="Minimum 8 characters"
-          leading={<LockKeyhole className="h-5 w-5" />}
-          trailing={
-            <PasswordToggle
-              shown={showNewPassword}
-              onToggle={() => setShowNewPassword((current) => !current)}
-              label="new password"
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label htmlFor="newPassword" className="text-xs font-bold text-[#181C1A]">
+              New Password
+            </label>
+            <span className="text-[11px] text-[#5A615D]">Min 8 characters</span>
+          </div>
+          <div className="relative flex items-center">
+            <input
+              id="newPassword"
+              name="newPassword"
+              type={showNewPassword ? 'text' : 'password'}
+              required
+              autoComplete="new-password"
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              disabled={loading}
+              placeholder="Minimum 8 characters"
+              className="h-11 w-full rounded-2xl border border-[#E2DED8] bg-white px-4 pr-11 text-base font-medium text-[#181C1A] transition placeholder:text-stone-400 focus:border-[#1c3a13] focus:outline-none focus:ring-2 focus:ring-[#1c3a13]/15 sm:text-sm"
             />
-          }
-          inputClassName="rounded-full"
-        />
+            <button
+              type="button"
+              onClick={() => setShowNewPassword((c) => !c)}
+              aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}
+              className="absolute right-3.5 p-1 text-stone-400 hover:text-stone-700"
+            >
+              {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
 
-        <Input
-          id="confirmPassword"
-          name="confirmPassword"
-          type={showConfirmPassword ? 'text' : 'password'}
-          label="Confirm password"
-          required
-          autoComplete="new-password"
-          value={confirmPassword}
-          onChange={(event) => setConfirmPassword(event.target.value)}
-          disabled={loading}
-          placeholder="Repeat new password"
-          leading={<LockKeyhole className="h-5 w-5" />}
-          trailing={
-            <PasswordToggle
-              shown={showConfirmPassword}
-              onToggle={() => setShowConfirmPassword((current) => !current)}
-              label="confirmed password"
+        <div className="space-y-1.5">
+          <label htmlFor="confirmPassword" className="block text-xs font-bold text-[#181C1A]">
+            Confirm Password
+          </label>
+          <div className="relative flex items-center">
+            <input
+              id="confirmPassword"
+              name="confirmPassword"
+              type={showConfirmPassword ? 'text' : 'password'}
+              required
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              disabled={loading}
+              placeholder="Repeat new password"
+              className="h-11 w-full rounded-2xl border border-[#E2DED8] bg-white px-4 pr-11 text-base font-medium text-[#181C1A] transition placeholder:text-stone-400 focus:border-[#1c3a13] focus:outline-none focus:ring-2 focus:ring-[#1c3a13]/15 sm:text-sm"
             />
-          }
-          inputClassName="rounded-full"
-        />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword((c) => !c)}
+              aria-label={showConfirmPassword ? 'Hide confirmed password' : 'Show confirmed password'}
+              className="absolute right-3.5 p-1 text-stone-400 hover:text-stone-700"
+            >
+              {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
 
-        <Button type="submit" fullWidth size="lg" disabled={loading} aria-busy={loading || undefined}>
-          {loading ? <Spinner size="sm" decorative /> : null}
-          {loading ? 'Saving…' : 'Save new password'}
-        </Button>
+        <button
+          type="submit"
+          disabled={loading}
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#1c3a13] px-4 text-sm font-bold text-white shadow-sm transition hover:bg-[#152e0f] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin text-[#D4F6A2]" />
+              <span>Saving...</span>
+            </>
+          ) : (
+            <>
+              <CheckCircle2 className="h-4 w-4 text-[#D4F6A2]" />
+              <span>Save New Password</span>
+            </>
+          )}
+        </button>
       </form>
     </AuthShell>
   );

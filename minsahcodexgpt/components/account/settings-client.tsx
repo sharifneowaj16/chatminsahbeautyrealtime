@@ -377,7 +377,7 @@ export function SettingsClient() {
                   <label className="block text-[11px] font-medium text-[#8a8f98] mb-1">Email Address</label>
                   <input
                     type="email"
-                    value={user.email}
+                    value={user.email ?? ''}
                     disabled
                     className="w-full h-11 px-3.5 bg-[#18191a] border border-[#23252a] rounded-xl text-base sm:text-sm text-[#62666d] cursor-not-allowed font-mono"
                   />

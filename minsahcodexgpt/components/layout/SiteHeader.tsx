@@ -11,7 +11,7 @@ import { useCartDrawer } from '@/contexts/CartDrawerContext';
 import { useDeliveryLocation } from '@/contexts/DeliveryLocationContext';
 import DeliveryFlyout from '@/components/layout/DeliveryFlyout';
 import MobileNavDrawer from '@/components/layout/MobileNavDrawer';
-import MemberAuthModal from '@/components/auth/MemberAuthModal';
+import { openGlobalAuthModal } from '@/components/auth/types';
 import { DEFAULT_MOBILE_HEADER_CONFIG, type MobileHeaderConfig } from '@/types/navigation-config';
 import {
   MapPinUserLineIcon,
@@ -42,7 +42,6 @@ export default function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [deliveryOpen, setDeliveryOpen] = useState(false);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [wishlistCount, setWishlistCount] = useState<number>(0);
   const [mobileHeader, setMobileHeader] = useState<MobileHeaderConfig>(DEFAULT_MOBILE_HEADER_CONFIG);
   const deliveryBtnRef = useRef<HTMLButtonElement>(null);
@@ -384,7 +383,7 @@ export default function SiteHeader() {
                 <button
                   type="button"
                   data-mobile-hidden={!mobileHeader.showAccount ? 'true' : undefined}
-                  onClick={() => setAuthModalOpen(true)}
+                  onClick={() => openGlobalAuthModal({ mode: 'signin' })}
                   className={`header-control signin focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4F6A2] focus-visible:ring-offset-2 focus-visible:ring-offset-[#062402] ${
                     mobileHeader.showAccount ? 'inline-flex' : 'hidden sm:inline-flex'
                   } max-sm:w-11 max-sm:h-11 max-sm:min-w-[44px] max-sm:min-h-[44px] max-sm:p-0 max-sm:justify-center items-center gap-1.5`}
@@ -483,13 +482,6 @@ export default function SiteHeader() {
         anchorRef={deliveryBtnRef}
       />
 
-      {/* Phone-First SMS OTP Modal */}
-      <MemberAuthModal
-        isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
-        onSuccess={() => setAuthModalOpen(false)}
-      />
-
       {/* Category Rail (Modular Component with auto-hide on down-scroll) */}
       <CategoryRail />
 
@@ -501,7 +493,7 @@ export default function SiteHeader() {
         onOpenDelivery={() => setDeliveryOpen(true)}
         onOpenAuth={() => {
           closeMenu();
-          setAuthModalOpen(true);
+          openGlobalAuthModal({ mode: 'signin' });
         }}
         categories={navCategories}
         user={user}

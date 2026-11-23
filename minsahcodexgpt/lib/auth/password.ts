@@ -1,29 +1,43 @@
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 
-// Use 12 rounds for secure password hashing
-// This takes ~250ms on modern hardware, providing good security
 const SALT_ROUNDS = 12;
-
-// Password requirements
 const PASSWORD_MIN_LENGTH = 8;
 const PASSWORD_MAX_LENGTH = 128;
+
+// Precomputed dummy hash for constant-time comparison when user does not exist
+const DUMMY_BCRYPT_HASH =
+  '$2a$12$C6UzMDM.H6dfI/f/IKxGhu6p1iL9D3e3y8xW2u1rH2pY9f9K3J7kG';
+
+const COMMON_WEAK_PASSWORDS = new Set([
+  'password',
+  'password1',
+  'password123',
+  '12345678',
+  '123456789',
+  '1234567890',
+  '00000000',
+  '11111111',
+  'qwerty123',
+  'qwertyui',
+  'admin123',
+  'letmein1',
+  'welcome1',
+  'iloveyou',
+  'bangladesh',
+  'minsah123',
+  'minsahbeauty',
+]);
 
 export interface PasswordValidationResult {
   isValid: boolean;
   errors: string[];
 }
 
-/**
- * Hash a password using bcrypt
- */
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, SALT_ROUNDS);
 }
 
-/**
- * Verify a password against a hash
- */
 export async function verifyPassword(
   password: string,
   hashedPassword: string
@@ -32,7 +46,23 @@ export async function verifyPassword(
 }
 
 /**
- * Validate password strength
+ * Always executes bcrypt comparison (even when hash is missing) to prevent
+ * timing-based account enumeration.
+ */
+export async function verifyPasswordTimingSafe(
+  password: string,
+  hashedPassword: string | null | undefined
+): Promise<boolean> {
+  const targetHash = hashedPassword || DUMMY_BCRYPT_HASH;
+  const matched = await bcrypt.compare(password, targetHash).catch(() => false);
+  return Boolean(hashedPassword) && matched;
+}
+
+/**
+ * Modern NIST-aligned password validation:
+ * - Minimum 8 characters, maximum 128 characters
+ * - Blocks common breached passwords and repeated single-character strings
+ * - Mobile-friendly: no forced special characters or arbitrary composition hoops
  */
 export function validatePassword(password: string): PasswordValidationResult {
   const errors: string[] = [];
@@ -52,42 +82,9 @@ export function validatePassword(password: string): PasswordValidationResult {
     errors.push(`Password must not exceed ${PASSWORD_MAX_LENGTH} characters`);
   }
 
-  // Check for at least one uppercase letter
-  if (!/[A-Z]/.test(password)) {
-    errors.push('Password must contain at least one uppercase letter');
-  }
-
-  // Check for at least one lowercase letter
-  if (!/[a-z]/.test(password)) {
-    errors.push('Password must contain at least one lowercase letter');
-  }
-
-  // Check for at least one number
-  if (!/\d/.test(password)) {
-    errors.push('Password must contain at least one number');
-  }
-
-  // Check for at least one special character
-  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
-    errors.push('Password must contain at least one special character');
-  }
-
-  // Check for common weak passwords
-  const commonPasswords = [
-    'password',
-    '12345678',
-    'qwerty',
-    'admin123',
-    'letmein',
-    'welcome',
-    'monkey',
-    'dragon',
-    'master',
-    'password123',
-  ];
-
-  if (commonPasswords.some((common) => password.toLowerCase().includes(common))) {
-    errors.push('Password is too common. Please choose a stronger password');
+  const lowered = password.trim().toLowerCase();
+  if (COMMON_WEAK_PASSWORDS.has(lowered) || /^(.)\1+$/.test(lowered)) {
+    errors.push('This password is too easy to guess. Please choose a stronger password');
   }
 
   return {
@@ -96,16 +93,10 @@ export function validatePassword(password: string): PasswordValidationResult {
   };
 }
 
-/**
- * Generate a secure random password
- */
 function randomChar(chars: string): string {
   return chars.charAt(crypto.randomInt(0, chars.length));
 }
 
-/**
- * Generate a secure random password
- */
 export function generateSecurePassword(length: number = 16): string {
   const safeLength = Math.max(length, 8);
   const lowercase = 'abcdefghijklmnopqrstuvwxyz';
@@ -125,7 +116,6 @@ export function generateSecurePassword(length: number = 16): string {
     chars.push(randomChar(allChars));
   }
 
-  // Fisher-Yates shuffle with crypto-backed indexes.
   for (let i = chars.length - 1; i > 0; i--) {
     const j = crypto.randomInt(0, i + 1);
     const charI = chars[i];
@@ -139,16 +129,10 @@ export function generateSecurePassword(length: number = 16): string {
   return chars.join('');
 }
 
-/**
- * Generate a password reset token (high-entropy URL-safe string)
- */
 export function generateResetToken(): string {
   return crypto.randomBytes(32).toString('base64url');
 }
 
-/**
- * Generate a verification code (6 digits)
- */
 export function generateVerificationCode(): string {
   return crypto.randomInt(100000, 1000000).toString();
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { verifyAccessToken } from '@/lib/auth/jwt';
+import { getAuthenticatedUserId } from '@/lib/auth/session';
 import { resolveDeliveryMessage } from '@/lib/delivery-message/resolver';
 import { getFreeDeliveryThresholdConfig } from '@/lib/commerce/offer-engine/server';
 
@@ -14,17 +14,7 @@ export async function GET(request: NextRequest) {
     const paramFreeDelivery = searchParams.get('isFreeDelivery');
     const isFreeDelivery = paramFreeDelivery === 'true' || paramFreeDelivery === '1';
 
-    let userId: string | null = null;
-    const token =
-      request.cookies.get('auth_token')?.value ||
-      request.headers.get('authorization')?.replace('Bearer ', '');
-
-    if (token) {
-      const payload = await verifyAccessToken(token);
-      if (payload?.userId) {
-        userId = payload.userId;
-      }
-    }
+    const userId = await getAuthenticatedUserId(request);
 
     const result = await resolveDeliveryMessage({
       productId,

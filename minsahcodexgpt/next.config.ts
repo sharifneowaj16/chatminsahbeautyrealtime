@@ -76,6 +76,26 @@ const nextConfig: NextConfig = {
         source: "/checkout/:path*",
         headers: [{ key: "Cache-Control", value: "no-store, no-cache, must-revalidate" }],
       },
+      {
+        source: "/account",
+        headers: [{ key: "Cache-Control", value: "private, no-store, no-cache, must-revalidate" }],
+      },
+      {
+        source: "/account/:path*",
+        headers: [{ key: "Cache-Control", value: "private, no-store, no-cache, must-revalidate" }],
+      },
+      {
+        source: "/login",
+        headers: [{ key: "Cache-Control", value: "private, no-store, no-cache, must-revalidate" }],
+      },
+      {
+        source: "/register",
+        headers: [{ key: "Cache-Control", value: "private, no-store, no-cache, must-revalidate" }],
+      },
+      {
+        source: "/logout",
+        headers: [{ key: "Cache-Control", value: "private, no-store, no-cache, must-revalidate" }],
+      },
     ];
   },
 

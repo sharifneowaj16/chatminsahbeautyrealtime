@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getServerSession } from 'next-auth';
-import prisma from '@/lib/prisma';
-import { authOptions } from '@/lib/auth/nextauth';
+import { getCustomerSession } from '@/lib/auth/session';
+import { bumpUserTokenVersion } from '@/lib/auth/session-revocation';
 import { createLogger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
@@ -57,27 +56,11 @@ function clearAllAuthCookies(request: NextRequest, response: NextResponse) {
 
 export async function POST(request: NextRequest) {
   try {
-    const refreshToken = request.cookies.get('refresh_token')?.value;
-    const cookieUserId = request.cookies.get('user_id')?.value;
-    const session = await getServerSession(authOptions).catch(() => null);
-    const resolvedUserId = cookieUserId || session?.user?.id || null;
-
-    if (refreshToken) {
-      await prisma.refreshToken
-        .updateMany({
-          where: { token: refreshToken },
-          data: { revoked: true },
-        })
-        .catch(() => {});
-    }
+    const sessionUser = await getCustomerSession().catch(() => null);
+    const resolvedUserId = sessionUser?.id || null;
 
     if (resolvedUserId) {
-      await prisma.refreshToken
-        .updateMany({
-          where: { userId: resolvedUserId, revoked: false },
-          data: { revoked: true },
-        })
-        .catch(() => {});
+      await bumpUserTokenVersion(resolvedUserId);
     }
 
     logger.info('User logged out', { userId: resolvedUserId || 'unknown' });

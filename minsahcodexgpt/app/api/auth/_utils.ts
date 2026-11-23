@@ -1,7 +1,5 @@
-import { getServerSession } from 'next-auth';
 import type { NextRequest } from 'next/server';
-import { authOptions } from '@/lib/auth/nextauth';
-import { verifyAccessToken } from '@/lib/auth/jwt';
+import { getAuthenticatedUserId as getSessionUserId } from '@/lib/auth/session';
 
 export const userProfileSelect = {
   id: true,
@@ -51,23 +49,8 @@ type UserProfileRecord = {
   lastLoginAt: Date | null;
 };
 
-export async function getAuthenticatedUserId(request: NextRequest): Promise<string | null> {
-  const tokenFromCookie = request.cookies.get('auth_token')?.value;
-  const authHeader = request.headers.get('authorization');
-  const tokenFromHeader = authHeader?.startsWith('Bearer ')
-    ? authHeader.substring(7)
-    : null;
-  const token = tokenFromCookie || tokenFromHeader;
-
-  if (token) {
-    const payload = await verifyAccessToken(token);
-    if (payload?.userId) {
-      return payload.userId;
-    }
-  }
-
-  const session = await getServerSession(authOptions);
-  return session?.user?.id ?? null;
+export async function getAuthenticatedUserId(request?: NextRequest): Promise<string | null> {
+  return getSessionUserId(request);
 }
 
 export function serializeUserProfile(user: UserProfileRecord) {

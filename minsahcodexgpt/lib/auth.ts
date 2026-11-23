@@ -1,4 +1,5 @@
-import { cookies } from 'next/headers';
+import prisma from '@/lib/prisma';
+import { getCustomerSession } from '@/lib/auth/session';
 
 export interface User {
   id: string;
@@ -22,52 +23,58 @@ export interface User {
 }
 
 /**
- * Verify authentication token and return user data
- * This is a server-side only function
- */
-export async function verifyAuthToken(token: string): Promise<User | null> {
-  try {
-    // Call your API to verify the token
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/auth/verify`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({ token }),
-      cache: 'no-store',
-    });
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const data = await response.json();
-    return data.user;
-  } catch (error) {
-    console.error('Token verification failed:', error);
-    return null;
-  }
-}
-
-/**
- * Get the current authenticated user from cookies
- * This is a server-side only function
+ * Server-side Single Source of Truth user lookup (unified NextAuth session).
  */
 export async function getCurrentUser(): Promise<User | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('auth_token')?.value;
+  const sessionUser = await getCustomerSession();
+  if (!sessionUser) return null;
 
-  if (!token) {
-    return null;
-  }
+  const dbUser = await prisma.user.findUnique({
+    where: { id: sessionUser.id },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+      avatar: true,
+      role: true,
+      status: true,
+      emailVerified: true,
+      loyaltyPoints: true,
+      referralCode: true,
+      newsletter: true,
+      smsNotifications: true,
+      promotions: true,
+      newProducts: true,
+      orderUpdates: true,
+    },
+  });
 
-  return await verifyAuthToken(token);
+  if (!dbUser || dbUser.status !== 'ACTIVE') return null;
+
+  return {
+    id: dbUser.id,
+    email: dbUser.email,
+    firstName: dbUser.firstName,
+    lastName: dbUser.lastName,
+    phone: dbUser.phone,
+    avatar: dbUser.avatar,
+    role: dbUser.role.toLowerCase() as 'customer' | 'vip' | 'premium',
+    status: dbUser.status.toLowerCase(),
+    emailVerified: !!dbUser.emailVerified,
+    loyaltyPoints: dbUser.loyaltyPoints,
+    referralCode: dbUser.referralCode,
+    preferences: {
+      newsletter: dbUser.newsletter,
+      smsNotifications: dbUser.smsNotifications,
+      promotions: dbUser.promotions,
+      newProducts: dbUser.newProducts,
+      orderUpdates: dbUser.orderUpdates,
+    },
+  };
 }
 
-/**
- * Check if user has a specific permission based on role
- */
 export function hasPermission(user: User | null, permission: string): boolean {
   if (!user) return false;
 
@@ -125,9 +132,6 @@ export function hasPermission(user: User | null, permission: string): boolean {
   return permissions.includes(permission);
 }
 
-/**
- * Get user permissions flags
- */
 export function getUserPermissions(user: User | null) {
   return {
     canBrowseProducts: hasPermission(user, 'browse_products'),

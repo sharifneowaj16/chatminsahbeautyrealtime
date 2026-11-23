@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
 import { VerifyOTPClient } from '@/components/verify-otp-client';
 
 interface VerifyOTPPageProps {
@@ -10,14 +11,13 @@ export default async function VerifyOTPPage({ searchParams }: VerifyOTPPageProps
   const email = params.email || '';
 
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-minsah-accent">
-        <div className="text-center">
-          <div className="mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-minsah-primary border-t-transparent"></div>
-          <p className="text-minsah-secondary" role="status">Loading…</p>
-        </div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-[#F4F3EF] px-4">
+          <Loader2 className="h-6 w-6 animate-spin text-[#1c3a13]" />
+        </main>
+      }
+    >
       <VerifyOTPClient email={email} />
     </Suspense>
   );
