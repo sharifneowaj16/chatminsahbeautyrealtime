@@ -12,6 +12,7 @@ export const TELEGRAM_ORDER_ACTIONS = {
   PHONE_OFF: 'PHONE_OFF',
   CANCEL: 'CANCEL',
   PATHAO_SEND: 'PATHAO_SEND',
+  STEADFAST_SEND: 'STEADFAST_SEND',
 } as const;
 
 export type TelegramOrderAction =

@@ -12,6 +12,9 @@ type TelegramOrderState = {
   pathaoConsignmentId: string | null;
   pathaoTrackingCode: string | null;
   pathaoSentAt: Date | null;
+  steadfastConsignmentId?: string | null;
+  steadfastTrackingCode?: string | null;
+  steadfastSentAt?: Date | null;
   shippedAt: Date | null;
   deliveredAt: Date | null;
   cancelledAt: Date | null;
@@ -47,6 +50,10 @@ function isPaidOnline(order: TelegramOrderState) {
 
 function hasPathaoDispatch(order: TelegramOrderState) {
   return Boolean(order.pathaoConsignmentId || order.pathaoTrackingCode || order.pathaoSentAt);
+}
+
+function hasSteadfastDispatch(order: TelegramOrderState) {
+  return Boolean(order.steadfastConsignmentId || order.steadfastTrackingCode || order.steadfastSentAt);
 }
 
 export function canTelegramPhoneConfirm(order: TelegramOrderState) {
@@ -91,6 +98,9 @@ export function canTelegramCancel(order: TelegramOrderState) {
   if (hasPathaoDispatch(order)) {
     return { ok: false as const, reason: 'Pathao-dispatched orders cannot be cancelled from Telegram.' };
   }
+  if (hasSteadfastDispatch(order)) {
+    return { ok: false as const, reason: 'Steadfast-dispatched orders cannot be cancelled from Telegram.' };
+  }
   return { ok: true as const };
 }
 
@@ -109,6 +119,34 @@ export function canTelegramPathaoSend(order: TelegramOrderState) {
   }
   if (normalize(order.status) === 'DELIVERED' || order.deliveredAt) {
     return { ok: false as const, reason: 'Delivered orders cannot be sent to Pathao again.' };
+  }
+  if (hasSteadfastDispatch(order)) {
+    return { ok: false as const, reason: 'Order is already dispatched via Steadfast.' };
+  }
+  if (!order.addressId) {
+    return { ok: false as const, reason: 'Order is missing shipping address.' };
+  }
+  return { ok: true as const };
+}
+
+export function canTelegramSteadfastSend(order: TelegramOrderState) {
+  if (normalize(order.status) !== 'CONFIRMED' && !order.phoneConfirmedAt) {
+    return { ok: false as const, reason: 'Order must be phone-confirmed before Steadfast dispatch.' };
+  }
+  if (isCodPaymentMethod(order.paymentMethod) && !order.phoneConfirmedAt) {
+    return { ok: false as const, reason: 'COD order needs phoneConfirmedAt before Steadfast dispatch.' };
+  }
+  if (normalize(order.status) === 'CANCELLED' || normalize(order.status) === 'REFUNDED') {
+    return { ok: false as const, reason: 'Cancelled/refunded orders cannot be sent to Steadfast.' };
+  }
+  if (order.cancelledAt || order.refundedAt) {
+    return { ok: false as const, reason: 'Cancelled/refunded orders cannot be sent to Steadfast.' };
+  }
+  if (normalize(order.status) === 'DELIVERED' || order.deliveredAt) {
+    return { ok: false as const, reason: 'Delivered orders cannot be sent to Steadfast again.' };
+  }
+  if (hasPathaoDispatch(order)) {
+    return { ok: false as const, reason: 'Order is already dispatched via Pathao.' };
   }
   if (!order.addressId) {
     return { ok: false as const, reason: 'Order is missing shipping address.' };

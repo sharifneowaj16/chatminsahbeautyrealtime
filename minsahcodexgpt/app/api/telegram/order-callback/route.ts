@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { createPathaoDeliveryForOrder } from '@/lib/pathao-delivery';
+import { createSteadfastDeliveryForOrder } from '@/lib/steadfast-delivery';
 import { enqueueGa4Purchase, enqueueTikTokPurchase } from '@/lib/queue/metaCapiQueue';
 import {
   createMetaPurchaseOutbox,
@@ -30,6 +31,7 @@ import {
 import {
   canTelegramCancel,
   canTelegramPathaoSend,
+  canTelegramSteadfastSend,
   canTelegramPhoneConfirm,
   canTelegramPhoneOff,
 } from '@/lib/telegram/order-state';
@@ -73,9 +75,9 @@ function getCallbackMessageId(callback: TelegramCallbackQuery) {
   return callback.message?.message_id == null ? null : String(callback.message.message_id);
 }
 
-async function telegramApi(method: string, body: Record<string, unknown>) {
+async function telegramApi(method: string, body: Record<string, unknown>): Promise<boolean> {
   const config = getTelegramOrderBotConfig();
-  if (!config.relayBase || !config.botToken) return;
+  if (!config.relayBase || !config.botToken) return false;
 
   const res = await fetch(`${config.relayBase}${config.botToken}/${method}`, {
     method: 'POST',
@@ -86,7 +88,10 @@ async function telegramApi(method: string, body: Record<string, unknown>) {
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     console.error(`Telegram ${method} failed:`, res.status, text);
+    return false;
   }
+
+  return true;
 }
 
 async function answerCallbackQuery(callbackQueryId: string, text: string, showAlert = false) {
@@ -128,35 +133,86 @@ async function createTelegramLog(params: {
   }
 }
 
-async function editTelegramMessage(callback: TelegramCallbackQuery, text: string, replyMarkup?: Record<string, unknown>) {
+async function editTelegramMessage(
+  callback: TelegramCallbackQuery,
+  text: string,
+  replyMarkup?: Record<string, unknown>,
+  fallbackReplyMarkup?: Record<string, unknown>
+) {
   if (!callback.message) return;
 
-  await telegramApi('editMessageText', {
+  const ok = await telegramApi('editMessageText', {
     chat_id: callback.message.chat.id,
     message_id: callback.message.message_id,
     text,
     parse_mode: 'HTML',
     ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
   });
+
+  if (!ok && fallbackReplyMarkup) {
+    await telegramApi('editMessageText', {
+      chat_id: callback.message.chat.id,
+      message_id: callback.message.message_id,
+      text,
+      parse_mode: 'HTML',
+      reply_markup: fallbackReplyMarkup,
+    });
+  }
 }
 
-async function buildPathaoButton(orderId: string, callback: TelegramCallbackQuery) {
-  const pathaoToken = await createTelegramActionToken({
-    action: TELEGRAM_ORDER_ACTIONS.PATHAO_SEND,
-    orderId,
-    telegramChatId: getCallbackChatId(callback),
-    messageId: getCallbackMessageId(callback),
-  });
+async function buildCourierDispatchButtons(orderId: string, callback: TelegramCallbackQuery) {
+  const telegramChatId = getCallbackChatId(callback);
+  const messageId = getCallbackMessageId(callback);
+
+  const [steadfastToken, pathaoToken] = await Promise.all([
+    createTelegramActionToken({
+      action: TELEGRAM_ORDER_ACTIONS.STEADFAST_SEND,
+      orderId,
+      telegramChatId,
+      messageId,
+    }),
+    createTelegramActionToken({
+      action: TELEGRAM_ORDER_ACTIONS.PATHAO_SEND,
+      orderId,
+      telegramChatId,
+      messageId,
+    }),
+  ]);
 
   return {
-    inline_keyboard: [
-      [
-        {
-          text: '🚚 Send to Pathao',
-          callback_data: pathaoToken.callbackData,
-        },
+    styledMarkup: {
+      inline_keyboard: [
+        [
+          {
+            text: '\u{1F69A} Send to Steadfast',
+            callback_data: steadfastToken.callbackData,
+            style: 'success',
+          },
+        ],
+        [
+          {
+            text: '\u{1F4E6} Send to Pathao',
+            callback_data: pathaoToken.callbackData,
+          },
+        ],
       ],
-    ],
+    },
+    standardMarkup: {
+      inline_keyboard: [
+        [
+          {
+            text: '\u{1F69A} Send to Steadfast',
+            callback_data: steadfastToken.callbackData,
+          },
+        ],
+        [
+          {
+            text: '\u{1F4E6} Send to Pathao',
+            callback_data: pathaoToken.callbackData,
+          },
+        ],
+      ],
+    },
   };
 }
 
@@ -176,6 +232,10 @@ function orderSelectFields() {
     pathaoConsignmentId: true,
     pathaoTrackingCode: true,
     pathaoSentAt: true,
+    steadfastConsignmentId: true,
+    steadfastTrackingCode: true,
+    steadfastSentAt: true,
+    steadfastStatus: true,
     shippedAt: true,
     deliveredAt: true,
     cancelledAt: true,
@@ -230,20 +290,22 @@ async function handlePhoneConfirmed(callback: TelegramCallbackQuery, orderId: st
       });
 
   // 1. Answer Telegram and update the message UI IMMEDIATELY (< 300ms) on 1st click
-  const pathaoButton = await buildPathaoButton(orderId, callback).catch((btnErr) => {
-    console.error('[TelegramCallback] buildPathaoButton error:', btnErr);
+  const courierButtons = await buildCourierDispatchButtons(orderId, callback).catch((btnErr) => {
+    console.error('[TelegramCallback] buildCourierDispatchButtons error:', btnErr);
     return undefined;
   });
 
   await Promise.all([
-    answerCallbackQuery(callback.id, '✅ Phone confirmed!'),
+    answerCallbackQuery(callback.id, '\u2705 Phone confirmed!'),
     editTelegramMessage(
       callback,
-      `<b>✅ Phone Confirmed</b>\n\n` +
+      `<b>\u2705 Phone Confirmed</b>\n\n` +
         `Order: <b>#${escapeHtml(updated.orderNumber)}</b>\n` +
-        `Meta COD Purchase dispatched (event_id: <code>${escapeHtml(eventId)}</code>).` +
+        `Meta COD Purchase dispatched (event_id: <code>${escapeHtml(eventId)}</code>).\n` +
+        `<i>Select courier to book parcel:</i>` +
         (updated.isTest ? '\n\nTest order: production tracking skipped.' : ''),
-      pathaoButton
+      courierButtons?.styledMarkup,
+      courierButtons?.standardMarkup
     ),
   ]);
 
@@ -437,14 +499,15 @@ async function handlePathaoSend(callback: TelegramCallbackQuery, orderId: string
   }));
 
   if (!result.success) {
-    const retryMarkup = await buildPathaoButton(orderId, callback).catch(() => undefined);
+    const retryButtons = await buildCourierDispatchButtons(orderId, callback).catch(() => undefined);
     await editTelegramMessage(
       callback,
-      `<b>⚠️ Pathao Dispatch Failed</b>\n\n` +
+      `<b>\u26A0\uFE0F Pathao Dispatch Failed</b>\n\n` +
         `Order: <b>#${escapeHtml(order.orderNumber)}</b>\n` +
         `Error: <code>${escapeHtml(result.error)}</code>\n\n` +
-        `Tap below to retry:`,
-      retryMarkup
+        `Tap below to retry or send via Steadfast:`,
+      retryButtons?.styledMarkup,
+      retryButtons?.standardMarkup
     );
     return {
       ok: false,
@@ -477,6 +540,95 @@ async function handlePathaoSend(callback: TelegramCallbackQuery, orderId: string
   };
 }
 
+async function handleSteadfastSend(callback: TelegramCallbackQuery, orderId: string): Promise<TelegramActionResult> {
+  const order = await prisma.order.findUnique({ where: { id: orderId }, select: orderSelectFields() });
+  if (!order) {
+    await answerCallbackQuery(callback.id, 'Order not found', true);
+    return { ok: false, status: 'NOT_FOUND', message: 'Order not found' };
+  }
+
+  const allowed = canTelegramSteadfastSend(order);
+  if (!allowed.ok) {
+    await answerCallbackQuery(callback.id, allowed.reason, true);
+    return {
+      ok: false,
+      status: 'BLOCKED',
+      message: allowed.reason,
+      orderNumber: order.orderNumber,
+    };
+  }
+
+  await Promise.all([
+    answerCallbackQuery(callback.id, '\u23F3 Booking Steadfast delivery...'),
+    editTelegramMessage(
+      callback,
+      `<b>\u23F3 Sending to Steadfast...</b>\n\nOrder: <b>#${escapeHtml(order.orderNumber)}</b>\nPlease wait while consignment is created...`
+    ),
+  ]);
+
+  const result = await createSteadfastDeliveryForOrder(orderId, {
+    actorId: `telegram:${callback.from.id}`,
+  }).catch((error) => ({
+    success: false as const,
+    error: error instanceof Error ? error.message : 'Unknown Steadfast error',
+  }));
+
+  if (!result.success) {
+    const retryButtons = await buildCourierDispatchButtons(orderId, callback).catch(() => undefined);
+    await editTelegramMessage(
+      callback,
+      `<b>\u26A0\uFE0F Steadfast Dispatch Failed</b>\n\n` +
+        `Order: <b>#${escapeHtml(order.orderNumber)}</b>\n` +
+        `Error: <code>${escapeHtml(result.error)}</code>\n\n` +
+        `Tap below to retry or send via Pathao:`,
+      retryButtons?.styledMarkup,
+      retryButtons?.standardMarkup
+    );
+    return {
+      ok: false,
+      status: 'FAILED',
+      message: result.error,
+      orderNumber: order.orderNumber,
+    };
+  }
+
+  const consignmentLine = result.consignmentId
+    ? `Consignment: <code>${escapeHtml(result.consignmentId)}</code>\n`
+    : '';
+  const trackingLine = result.trackingCode
+    ? `Tracking: <code>${escapeHtml(result.trackingCode)}</code>\n`
+    : '';
+  const trackMarkup = result.trackingCode
+    ? {
+        inline_keyboard: [
+          [
+            {
+              text: '\u{1F517} Track Steadfast',
+              url: `https://steadfast.com.bd/t/${encodeURIComponent(result.trackingCode)}`,
+            },
+          ],
+        ],
+      }
+    : undefined;
+
+  await editTelegramMessage(
+    callback,
+    `<b>\u2705 Steadfast Dispatch ${result.alreadyDispatched ? 'Already Exists' : 'Created'}</b>\n\n` +
+      `Order: <b>#${escapeHtml(result.orderNumber)}</b>\n` +
+      `${consignmentLine}` +
+      `${trackingLine}` +
+      `Status: ${escapeHtml(result.steadfastStatus ?? 'in_review')}`,
+    trackMarkup
+  );
+
+  return {
+    ok: true,
+    status: 'SUCCESS',
+    message: result.alreadyDispatched ? 'Already sent to Steadfast' : 'Sent to Steadfast',
+    orderNumber: result.orderNumber,
+  };
+}
+
 function isTelegramOrderAction(action: string): action is TelegramOrderAction {
   return Object.values(TELEGRAM_ORDER_ACTIONS).includes(action as TelegramOrderAction);
 }
@@ -490,6 +642,7 @@ async function runTelegramOrderAction(
   if (action === TELEGRAM_ORDER_ACTIONS.PHONE_OFF) return handlePhoneOff(callback, orderId);
   if (action === TELEGRAM_ORDER_ACTIONS.CANCEL) return handleCancel(callback, orderId);
   if (action === TELEGRAM_ORDER_ACTIONS.PATHAO_SEND) return handlePathaoSend(callback, orderId);
+  if (action === TELEGRAM_ORDER_ACTIONS.STEADFAST_SEND) return handleSteadfastSend(callback, orderId);
 
   await answerCallbackQuery(callback.id, 'Unknown action');
   return { ok: false, status: 'FAILED' as const, message: 'Unknown action' };
