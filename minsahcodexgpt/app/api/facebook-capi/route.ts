@@ -569,7 +569,7 @@ export async function POST(request: NextRequest) {
       safePayload,
       policyDecision,
     });
-    const dispatch = await requestMetaOutboxDispatch(outbox.record.id);
+    const dispatch = outbox.created ? await requestMetaOutboxDispatch(outbox.record.id) : { queued: true, deliveredInline: false };
 
     return NextResponse.json(
       {

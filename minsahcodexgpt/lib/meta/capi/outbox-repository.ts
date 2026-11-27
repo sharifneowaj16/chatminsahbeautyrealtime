@@ -220,8 +220,8 @@ export async function markMetaOutboxProcessing(input: {
          "processingAt" = NOW(),
          "updatedAt" = NOW()
      WHERE "id" = $1
-       AND "status" IN ('DISPATCHED', 'RETRY_SCHEDULED', 'PENDING', 'PROCESSING')
-       AND ($2::text IS NULL OR "leaseToken" = $2)
+       AND ("status" IN ('DISPATCHED', 'RETRY_SCHEDULED', 'PENDING') OR ("status" = 'PROCESSING' AND "processingAt" < NOW() - INTERVAL '2 minutes'))
+       AND (($2::text IS NULL AND ("leaseExpiresAt" IS NULL OR "leaseExpiresAt" < NOW())) OR "leaseToken" = $2)
      RETURNING *`,
     input.outboxId,
     input.leaseToken ?? null
