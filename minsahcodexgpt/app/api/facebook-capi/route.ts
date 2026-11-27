@@ -537,7 +537,7 @@ export async function POST(request: NextRequest) {
       ],
     };
 
-    if (process.env.NODE_ENV !== 'production' && FACEBOOK_TEST_EVENT_CODE) {
+    if (FACEBOOK_TEST_EVENT_CODE) {
       capiRequest.test_event_code = FACEBOOK_TEST_EVENT_CODE;
     }
 

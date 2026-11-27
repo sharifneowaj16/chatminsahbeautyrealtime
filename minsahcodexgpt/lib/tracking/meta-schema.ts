@@ -25,8 +25,10 @@ export function getMetaCapiAccessToken() {
 }
 
 export function getMetaTestEventCode() {
-  if (process.env.NODE_ENV === 'production') return undefined;
-  return process.env.META_TEST_EVENT_CODE ?? process.env.FACEBOOK_TEST_EVENT_CODE;
+  if (process.env.NODE_ENV === 'production' && process.env.META_ALLOW_PROD_TEST_EVENTS !== 'true') {
+    return undefined;
+  }
+  return (process.env.META_TEST_EVENT_CODE ?? process.env.FACEBOOK_TEST_EVENT_CODE)?.trim() || undefined;
 }
 
 export function withMetaSchemaVersion<T extends Record<string, unknown>>(customData: T): T & {

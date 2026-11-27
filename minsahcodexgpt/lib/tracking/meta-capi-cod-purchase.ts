@@ -665,7 +665,7 @@ export async function sendCodPurchaseToMeta(params: {
       },
     ],
     ...getMetaDataProcessingOptions(),
-    ...(process.env.NODE_ENV !== 'production' && META_TEST_EVENT_CODE
+    ...(META_TEST_EVENT_CODE
       ? { test_event_code: META_TEST_EVENT_CODE }
       : {}),
   };
@@ -962,7 +962,7 @@ export async function sendOnlinePaidPurchaseToMeta(params: {
       },
     ],
     ...getMetaDataProcessingOptions(),
-    ...(process.env.NODE_ENV !== 'production' && META_TEST_EVENT_CODE
+    ...(META_TEST_EVENT_CODE
       ? { test_event_code: META_TEST_EVENT_CODE }
       : {}),
   };
