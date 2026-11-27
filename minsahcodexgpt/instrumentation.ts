@@ -10,6 +10,7 @@ const globalForWorkers = globalThis as unknown as {
   minsahProductWorkerStarted?: boolean;
   minsahOrderTelegramWorkerStarted?: boolean;
   minsahMetaCapiWorkerStarted?: boolean;
+  minsahGa4EventsWorkerStarted?: boolean;
   minsahMetaCatalogWorkerStarted?: boolean;
   minsahMetaBatchStatusWorkerStarted?: boolean;
   minsahMetaLeadWorkerStarted?: boolean;
@@ -55,6 +56,13 @@ export async function register() {
     startMetaCapiWorker();
     globalForWorkers.minsahMetaCapiWorkerStarted = true;
     console.log('[instrumentation] ✅ Meta CAPI/GA4 worker started');
+  }
+
+  if (!globalForWorkers.minsahGa4EventsWorkerStarted) {
+    const { startGa4EventsWorker } = await import('./workers/ga4-events.worker');
+    startGa4EventsWorker();
+    globalForWorkers.minsahGa4EventsWorkerStarted = true;
+    console.log('[instrumentation] \u2705 GA4 events worker started');
   }
 
   if (!globalForWorkers.minsahMetaCatalogWorkerStarted) {

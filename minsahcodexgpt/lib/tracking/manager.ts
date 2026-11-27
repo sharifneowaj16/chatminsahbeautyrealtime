@@ -24,6 +24,8 @@ declare global {
     fbq?: (...args: any[]) => void;
     __mbFbInitReady?: boolean;
     gtag?: (...args: any[]) => void;
+    __mbGa4InitReady?: boolean;
+    __mbGa4Enabled?: boolean;
     dataLayer?: any[] & { __mbPurchaseGuardInstalled?: boolean };
     ttq?: {
       page?: () => void;
@@ -127,15 +129,16 @@ function buildGa4ItemFromContent(
     data?.product_id,
     data?.productId
   );
-  const price = toFiniteNumber(content.item_price ?? content.price ?? data?.value);
   const quantity = toPositiveInteger(content.quantity, 1);
+  const multiItem = (Array.isArray(data?.contents) && data.contents.length > 1) || quantity > 1;
+  const price = toFiniteNumber(content.item_price ?? content.price ?? (multiItem ? undefined : data?.value));
 
   return {
-    item_id: itemId,
-    ...(itemName && { item_name: itemName }),
-    ...(itemCategory && { item_category: itemCategory }),
-    ...(itemVariant && { item_variant: itemVariant }),
-    ...(itemGroupId && { item_group_id: itemGroupId }),
+    item_id: itemId.slice(0, 100),
+    ...(itemName && { item_name: itemName.slice(0, 100) }),
+    ...(itemCategory && { item_category: itemCategory.slice(0, 100) }),
+    ...(itemVariant && { item_variant: itemVariant.slice(0, 100) }),
+    ...(itemGroupId && { item_group_id: itemGroupId.slice(0, 100) }),
     ...(price !== undefined && { price }),
     quantity,
     ...(Number.isInteger(index) && { index }),
@@ -187,6 +190,16 @@ function buildGoogleEventPayload(gaEvent: string, data?: TrackingEventData): Tra
     const items = buildGa4Items(payload);
     if (items.length > 0) {
       payload.items = items;
+    }
+  }
+
+  for (const key of ['content_ids','contentIds','contents','content_type','contentType','content_name','contentName','content_category','contentCategory','num_items','numItems','source','medium','campaign','term','content','search_string','searchString']) {
+    delete payload[key];
+  }
+
+  for (const [k, v] of Object.entries(payload)) {
+    if (typeof v === 'string' && v.length > 100) {
+      payload[k] = v.slice(0, 100);
     }
   }
 
@@ -310,10 +323,7 @@ class TrackingManager {
         pixelId: facebookPixelId,
       },
       google: {
-        enabled:
-          process.env.NEXT_PUBLIC_GA_ENABLED === 'true' ||
-          !!process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID ||
-          !!process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
+        enabled: process.env.NEXT_PUBLIC_GA_ENABLED !== 'false',
         measurementId:
           process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID ||
           process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ||
@@ -494,7 +504,7 @@ class TrackingManager {
     if (this.config.facebook.enabled) {
       this.trackFacebook(event, enrichedData, options.metaEventId);
     }
-    if (this.config.google.enabled) {
+    if (this.config.google.enabled || (typeof window !== 'undefined' && window.__mbGa4Enabled === true)) {
       this.trackGoogle(event, enrichedData);
     }
     if (this.config.tiktok.enabled) {
@@ -576,8 +586,9 @@ class TrackingManager {
       return;
     }
 
-    if (typeof window.gtag !== 'function') {
-      if (attempt < 50) {
+    if (window.__mbGa4Enabled === false) return;
+    if (typeof window.gtag !== 'function' || window.__mbGa4InitReady !== true) {
+      if (attempt < 60) {
         window.setTimeout(() => this.trackGoogle(event, data, attempt + 1), 100);
       }
       return;

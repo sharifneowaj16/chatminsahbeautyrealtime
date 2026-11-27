@@ -56,8 +56,11 @@ function shouldIgnoreGatewayReferrer(pathname: string) {
 function sendGa4PageView(pathname: string, attempt = 0) {
   if (typeof window === 'undefined') return;
 
-  if (typeof window.gtag !== 'function') {
-    if (attempt < 50) {
+  const gaWin = window as Window & { __mbGa4InitReady?: boolean; __mbGa4Enabled?: boolean };
+  if (gaWin.__mbGa4Enabled === false) return;
+
+  if (typeof window.gtag !== 'function' || gaWin.__mbGa4InitReady !== true) {
+    if (attempt < 60) {
       window.setTimeout(() => sendGa4PageView(pathname, attempt + 1), 100);
     }
     return;

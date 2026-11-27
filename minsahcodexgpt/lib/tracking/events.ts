@@ -1,6 +1,7 @@
 'use client';
 
 import { track } from '@/lib/tracking/manager';
+import { canRunClientTracking } from '@/lib/tracking/client-traffic-filter';
 import { buildMetaCommerceBrowserEvent } from '@/lib/meta/browser/commerce';
 import { metaBrowserDebug } from '@/lib/meta/browser/diagnostics';
 import type { TrackingEvent, TrackingEventData } from '@/types/tracking';
@@ -148,11 +149,11 @@ export function trackDeliveryMessageViewed({
         product_id: productId || undefined,
         product_slug: productSlug || undefined,
       });
-      if (typeof window.gtag === 'function') {
+      if (canRunClientTracking() && typeof window.gtag === 'function' && (window as Window & { __mbGa4InitReady?: boolean }).__mbGa4InitReady === true) {
         window.gtag('event', 'delivery_message_viewed', {
           message_type: messageType,
-          product_id: productId || undefined,
-          product_slug: productSlug || undefined,
+          product_id: productId ? productId.slice(0, 100) : undefined,
+          product_slug: productSlug ? productSlug.slice(0, 100) : undefined,
         });
       }
     }
@@ -179,11 +180,11 @@ export function trackDeliveryMessageClicked({
         product_id: productId || undefined,
         product_slug: productSlug || undefined,
       });
-      if (typeof window.gtag === 'function') {
+      if (canRunClientTracking() && typeof window.gtag === 'function' && (window as Window & { __mbGa4InitReady?: boolean }).__mbGa4InitReady === true) {
         window.gtag('event', 'delivery_message_clicked', {
           message_type: messageType,
-          product_id: productId || undefined,
-          product_slug: productSlug || undefined,
+          product_id: productId ? productId.slice(0, 100) : undefined,
+          product_slug: productSlug ? productSlug.slice(0, 100) : undefined,
         });
       }
     }

@@ -64,10 +64,21 @@ const META_PIXEL_ENABLED_FLAG =
   process.env.NEXT_PUBLIC_META_PIXEL_ENABLED ||
   process.env.NEXT_PUBLIC_FB_PIXEL_ENABLED;
 
+const BUILD_TIME_GA4_ID =
+  process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID ||
+  process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ||
+  '';
+
+const GA_ENABLED_FLAG = process.env.NEXT_PUBLIC_GA_ENABLED;
+
 export default function AllPixels() {
   const [trackingAllowed, setTrackingAllowed] = useState(false);
   const [blockReason, setBlockReason] = useState<string | null>('CLIENT_NOT_READY');
   const [runtimeFbPixelId, setRuntimeFbPixelId] = useState<string>(BUILD_TIME_FB_PIXEL_ID);
+  const [runtimeGa4, setRuntimeGa4] = useState<{ enabled: boolean; measurementId: string }>({
+    enabled: GA_ENABLED_FLAG !== 'false' && Boolean(BUILD_TIME_GA4_ID),
+    measurementId: BUILD_TIME_GA4_ID,
+  });
 
   useEffect(() => {
     const updateTrackingPermission = () => {
@@ -103,6 +114,23 @@ export default function AllPixels() {
     };
   }, [runtimeFbPixelId]);
 
+  useEffect(() => {
+    let active = true;
+    fetch('/api/tracking/ga4-config', { credentials: 'same-origin' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!active || !data) return;
+        const enabled = data.enabled === true && typeof data.measurementId === 'string' && Boolean(data.measurementId.trim());
+        const measurementId = enabled ? data.measurementId.trim() : '';
+        (window as Window & { __mbGa4Enabled?: boolean }).__mbGa4Enabled = enabled;
+        setRuntimeGa4({ enabled, measurementId });
+      })
+      .catch(() => null);
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const facebookPixelId = runtimeFbPixelId;
   const facebookPixelEnabled =
     META_PIXEL_ENABLED_FLAG === 'true' ||
@@ -113,8 +141,8 @@ export default function AllPixels() {
   const config = {
     facebook: { enabled: facebookPixelEnabled, pixelId: facebookPixelId },
     google: {
-      enabled: process.env.NEXT_PUBLIC_GA_ENABLED === 'true' || !!process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID || !!process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
-      measurementId: process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID || process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || '',
+      enabled: runtimeGa4.enabled,
+      measurementId: runtimeGa4.measurementId,
       tagManagerId: process.env.NEXT_PUBLIC_GTM_ID || '',
     },
     tiktok: { enabled: tiktokPixelEnabled, pixelId: tiktokPixelId },

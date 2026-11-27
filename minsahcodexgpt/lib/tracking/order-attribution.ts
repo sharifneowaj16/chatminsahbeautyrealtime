@@ -124,14 +124,29 @@ function parseGaClientId(gaCookie?: string) {
 
 function parseGaSessionId(value?: string) {
   if (!value) return undefined;
+  const gs2Match = value.match(/(?:^|[.$])s(\d+)(?:$|[.$])/);
+  if (gs2Match) return gs2Match[1];
   const parts = value.split('.');
-  const sessionPart = parts.find((part) => /^s\d+$/.test(part));
-  if (sessionPart) return sessionPart.slice(1);
   if (parts.length >= 3 && /^\d+$/.test(parts[2])) return parts[2];
   return undefined;
 }
 
 function readGaSessionId(request: NextRequest) {
+  const measurementId = (
+    process.env.GA4_MEASUREMENT_ID ||
+    process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID ||
+    process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ||
+    ''
+  ).trim();
+  const preferredCookie = measurementId.startsWith('G-')
+    ? `_ga_${measurementId.slice(2)}`
+    : undefined;
+
+  if (preferredCookie) {
+    const exact = parseGaSessionId(request.cookies.get(preferredCookie)?.value);
+    if (exact) return exact;
+  }
+
   for (const cookie of request.cookies.getAll()) {
     if (cookie.name.startsWith('_ga_')) {
       const sessionId = parseGaSessionId(cookie.value);

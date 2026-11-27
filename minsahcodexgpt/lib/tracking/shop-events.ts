@@ -1,6 +1,7 @@
 'use client';
 
 import type { Product } from '@/types/product';
+import { canRunClientTracking } from '@/lib/tracking/client-traffic-filter';
 
 
 type ShopEventName =
@@ -114,8 +115,28 @@ function pushShopEvent(eventName: ShopEventName, payload: Record<string, unknown
   window.dataLayer = window.dataLayer || [];
   window.dataLayer.push({ event: eventName, ...enrichedPayload });
 
-  if (typeof window.gtag === 'function') {
-    window.gtag('event', eventName, enrichedPayload);
+  if (canRunClientTracking() && typeof window.gtag === 'function' && (window as Window & { __mbGa4InitReady?: boolean }).__mbGa4InitReady === true) {
+    const gtagPayload: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(enrichedPayload)) {
+      if (k === 'filters' || k === 'list_name' || k === 'search_string' || v === undefined || v === null) continue;
+      if (k === 'items' && Array.isArray(v)) {
+        gtagPayload.items = v.map((raw) => {
+          const it = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+          const out: Record<string, unknown> = {};
+          for (const [ik, iv] of Object.entries(it)) {
+            if (['brand', 'category', 'list_name', 'position'].includes(ik) || iv === undefined || iv === null) continue;
+            out[ik] = typeof iv === 'string' ? iv.slice(0, 100) : iv;
+          }
+          return out;
+        });
+      } else if (typeof v === 'string') {
+        gtagPayload[k] = v.slice(0, 100);
+      } else if (typeof v === 'number' || typeof v === 'boolean') {
+        gtagPayload[k] = v;
+      }
+    }
+    const gaEventName = eventName === 'wishlist_add' ? 'add_to_wishlist' : eventName;
+    window.gtag('event', gaEventName, gtagPayload);
   }
 
   const body = JSON.stringify({
@@ -259,7 +280,7 @@ export function trackShopAddToCart(
     list_name: listName,
     filters: cleanFilters(filters),
     value: toNumber(product.price) * Math.max(1, quantity),
-    items: [{ ...item, variant_id: variantId || undefined }],
+    items: [{ ...item, quantity: Math.max(1, quantity), variant_id: variantId || undefined }],
   });
 }
 

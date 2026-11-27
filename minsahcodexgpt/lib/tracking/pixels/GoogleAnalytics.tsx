@@ -46,10 +46,12 @@ export default function GoogleAnalytics({ measurementId, enabled = true }: Googl
               }
               dataLayer.push(arguments);
             }
+            window.gtag = gtag;
             gtag('js', new Date());
-            gtag('config', '${measurementId}', {
+            gtag('config', ${JSON.stringify(measurementId)}, {
               send_page_view: false
             });
+            window.__mbGa4InitReady = true;
           `,
         }}
       />

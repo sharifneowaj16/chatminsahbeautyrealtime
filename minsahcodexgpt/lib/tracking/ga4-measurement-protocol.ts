@@ -5,11 +5,8 @@ import { classifyStoredOrderTraffic } from '@/lib/tracking/traffic-filter';
 import { TRACKING_SCHEMA_VERSION } from '@/lib/tracking/meta-schema';
 import { getTrackingFailureLogRetentionMetadata } from '@/lib/tracking/failure-retention';
 
-const GA4_MEASUREMENT_ID =
-  process.env.GA4_MEASUREMENT_ID ??
-  process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID ??
-  process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
-const GA4_API_SECRET = process.env.GA4_API_SECRET ?? process.env.GOOGLE_ANALYTICS_API_SECRET;
+const getGa4MeasurementId = () => (process.env.GA4_MEASUREMENT_ID ?? process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID ?? process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? '').trim();
+const getGa4ApiSecret = () => (process.env.GA4_API_SECRET ?? process.env.GOOGLE_ANALYTICS_API_SECRET ?? '').trim();
 const GA4_MP_TIMEOUT_MS = Number(process.env.GA4_MP_TIMEOUT_MS ?? 10_000) || 10_000;
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ??
@@ -85,26 +82,27 @@ type Ga4AttributionOrder = {
   campaignSourceUrl?: string | null;
 };
 
-function buildGa4AttributionParams(order: Ga4AttributionOrder) {
-  const freeDeliveryThreshold = decimalToNumber(order.freeDeliveryThreshold);
+function capGa4Param(value?: string | null) {
+  const s = value?.trim();
+  return s ? s.slice(0, 100) : undefined;
+}
 
+function computeGa4PurchaseValue(orderTotal: number, shipping: number, tax: number) {
+  const net = Number((orderTotal - shipping - tax).toFixed(2));
+  return net > 0 ? net : orderTotal;
+}
+
+function buildGa4AttributionParams(order: Ga4AttributionOrder) {
   return {
-    ...(order.utmSource && { utm_source: order.utmSource, source: order.utmSource }),
-    ...(order.utmMedium && { utm_medium: order.utmMedium, medium: order.utmMedium }),
-    ...(order.utmCampaign && { utm_campaign: order.utmCampaign, campaign: order.utmCampaign }),
-    ...(order.utmContent && { utm_content: order.utmContent, content: order.utmContent }),
-    ...(order.utmTerm && { utm_term: order.utmTerm, term: order.utmTerm }),
-    ...(order.campaignId && { campaign_id: order.campaignId }),
-    ...(order.adsetId && { adset_id: order.adsetId }),
-    ...(order.adId && { ad_id: order.adId }),
-    ...(order.placement && { placement: order.placement }),
-    ...(order.offerVersion && { offer_version: order.offerVersion }),
-    ...(order.abVariant && { ab_variant: order.abVariant }),
-    ...(order.couponCode && { applied_coupon_code: order.couponCode }),
-    ...(order.attributionCouponCode && { attribution_coupon_code: order.attributionCouponCode }),
-    ...(freeDeliveryThreshold > 0 && { free_delivery_threshold: freeDeliveryThreshold }),
-    ...(order.landingOffer && { landing_offer: order.landingOffer }),
-    ...(order.campaignSourceUrl && { campaign_source_url: order.campaignSourceUrl }),
+    ...(capGa4Param(order.utmSource) && { utm_source: capGa4Param(order.utmSource) }),
+    ...(capGa4Param(order.utmMedium) && { utm_medium: capGa4Param(order.utmMedium) }),
+    ...(capGa4Param(order.utmCampaign) && { utm_campaign: capGa4Param(order.utmCampaign) }),
+    ...(capGa4Param(order.utmContent) && { utm_content: capGa4Param(order.utmContent) }),
+    ...(capGa4Param(order.campaignId) && { campaign_id: capGa4Param(order.campaignId) }),
+    ...(capGa4Param(order.adsetId) && { adset_id: capGa4Param(order.adsetId) }),
+    ...(capGa4Param(order.adId) && { ad_id: capGa4Param(order.adId) }),
+    ...(capGa4Param(order.offerVersion) && { offer_version: capGa4Param(order.offerVersion) }),
+    ...(capGa4Param(order.abVariant) && { ab_variant: capGa4Param(order.abVariant) }),
   };
 }
 
@@ -266,7 +264,7 @@ function buildSafePayload(order: NonNullable<OrderForGa4>, source: Ga4PurchaseSo
     event_name: 'purchase',
     transaction_id: order.id,
     order_id: order.id,
-    order_number: order.orderNumber,
+    order_number: capGa4Param(order.orderNumber),
     source,
     event_time: eventTimeSeconds,
     value: decimalToNumber(order.total),
@@ -286,6 +284,8 @@ export async function sendGa4Purchase(params: {
 }) {
   const { orderId, source, retryCount = 0, finalAttempt = false } = params;
   const eventId = `GA4-Purchase-${orderId}`;
+  const GA4_MEASUREMENT_ID = getGa4MeasurementId();
+  const GA4_API_SECRET = getGa4ApiSecret();
 
   if (!GA4_MEASUREMENT_ID || !GA4_API_SECRET) {
     await logGa4Failure({
@@ -434,39 +434,41 @@ export async function sendGa4Purchase(params: {
     const catalogContent = catalogContents[index];
 
     return {
-      item_id: getItemId(item),
-      item_name: item.name,
+      item_id: capGa4Param(getItemId(item)) ?? item.id.slice(0, 100),
+      item_name: capGa4Param(item.name) ?? "Product",
       price: decimalToNumber(item.price),
       quantity: item.quantity,
-      ...(catalogContent?.item_group_id && { item_group_id: catalogContent.item_group_id }),
-      ...(catalogContent?.variant_id && { variant_id: catalogContent.variant_id }),
-      ...(catalogContent?.item_variant && { item_variant: catalogContent.item_variant }),
-      ...(catalogContent?.shade && { shade: catalogContent.shade }),
-      ...(catalogContent?.size && { size: catalogContent.size }),
+      ...(capGa4Param(catalogContent?.item_group_id) && { item_group_id: capGa4Param(catalogContent?.item_group_id) }),
+      ...(capGa4Param(catalogContent?.variant_id) && { variant_id: capGa4Param(catalogContent?.variant_id) }),
+      ...(capGa4Param(catalogContent?.item_variant) && { item_variant: capGa4Param(catalogContent?.item_variant) }),
+      ...(capGa4Param(catalogContent?.shade) && { shade: capGa4Param(catalogContent?.shade) }),
+      ...(capGa4Param(catalogContent?.size) && { size: capGa4Param(catalogContent?.size) }),
     };
   });
 
   const payload = {
     client_id: order.gaClientId,
-    timestamp_micros: eventDate.getTime() * 1000,
-    non_personalized_ads: false,
+    timestamp_micros: Math.max(eventDate.getTime(), Date.now() - 71 * 60 * 60 * 1000) * 1000,
+    consent: { ad_user_data: 'GRANTED', ad_personalization: 'GRANTED' },
+    ...(order.customerIp?.trim() ? { ip_override: order.customerIp.trim() } : {}),
+    ...(order.customerUa?.trim() ? { user_agent: order.customerUa.trim() } : {}),
     events: [
       {
         name: 'purchase',
         params: {
           transaction_id: order.id,
-          event_id: eventId,
+          event_id: capGa4Param(eventId),
           affiliation: 'Minsah Beauty',
           currency: 'BDT',
-          value: orderValue,
+          value: computeGa4PurchaseValue(orderValue, decimalToNumber(order.shippingCost), decimalToNumber(order.taxAmount)),
           shipping: decimalToNumber(order.shippingCost),
           tax: decimalToNumber(order.taxAmount),
-          coupon: order.couponCode ?? undefined,
+          coupon: capGa4Param(order.couponCode),
           items,
           engagement_time_msec: 1,
           page_location: `${SITE_URL.replace(/\/$/, '')}/checkout/${source === 'online_paid' ? 'payment-complete' : 'phone-confirmed'}`,
-          order_number: order.orderNumber,
-          ga_purchase_source: source,
+          order_number: capGa4Param(order.orderNumber),
+          purchase_source: source,
           ...buildGa4AttributionParams(order),
           ...(sessionId ? { session_id: sessionId } : {}),
         },
@@ -535,7 +537,7 @@ function buildGa4RefundSafePayload(
     event_name: 'refund',
     transaction_id: order.id,
     order_id: order.id,
-    order_number: order.orderNumber,
+    order_number: capGa4Param(order.orderNumber),
     source,
     event_time: eventTimeSeconds,
     value: refundAmount,
@@ -576,7 +578,7 @@ function buildRefundItems(order: NonNullable<OrderForGa4Refund>) {
   if (returnItems.length > 0) {
     return returnItems.map((item) => ({
       item_id: item.productId ? getGa4ItemId({ productId: item.productId, variantId: null, sku: null, id: item.id }) : item.id,
-      item_name: item.name,
+      item_name: capGa4Param(item.name) ?? "Product",
       price: decimalToNumber(item.price),
       quantity: item.quantity,
     }));
@@ -592,15 +594,15 @@ function buildRefundItems(order: NonNullable<OrderForGa4Refund>) {
     const catalogContent = catalogContents[index];
 
     return {
-      item_id: getItemId(item),
-      item_name: item.name,
+      item_id: capGa4Param(getItemId(item)) ?? item.id.slice(0, 100),
+      item_name: capGa4Param(item.name) ?? "Product",
       price: decimalToNumber(item.price),
       quantity: item.quantity,
-      ...(catalogContent?.item_group_id && { item_group_id: catalogContent.item_group_id }),
-      ...(catalogContent?.variant_id && { variant_id: catalogContent.variant_id }),
-      ...(catalogContent?.item_variant && { item_variant: catalogContent.item_variant }),
-      ...(catalogContent?.shade && { shade: catalogContent.shade }),
-      ...(catalogContent?.size && { size: catalogContent.size }),
+      ...(capGa4Param(catalogContent?.item_group_id) && { item_group_id: capGa4Param(catalogContent?.item_group_id) }),
+      ...(capGa4Param(catalogContent?.variant_id) && { variant_id: capGa4Param(catalogContent?.variant_id) }),
+      ...(capGa4Param(catalogContent?.item_variant) && { item_variant: capGa4Param(catalogContent?.item_variant) }),
+      ...(capGa4Param(catalogContent?.shade) && { shade: capGa4Param(catalogContent?.shade) }),
+      ...(capGa4Param(catalogContent?.size) && { size: capGa4Param(catalogContent?.size) }),
     };
   });
 }
@@ -623,6 +625,8 @@ export async function sendGa4Refund(params: {
 }) {
   const { orderId, source, retryCount = 0, finalAttempt = false } = params;
   const eventId = `GA4-Refund-${orderId}`;
+  const GA4_MEASUREMENT_ID = getGa4MeasurementId();
+  const GA4_API_SECRET = getGa4ApiSecret();
 
   if (!GA4_MEASUREMENT_ID || !GA4_API_SECRET) {
     await logGa4Failure({
@@ -700,22 +704,24 @@ export async function sendGa4Refund(params: {
   const sessionId = getGaSessionId(order.gaSessionId);
   const payload = {
     client_id: order.gaClientId,
-    timestamp_micros: eventDate.getTime() * 1000,
-    non_personalized_ads: false,
+    timestamp_micros: Math.max(eventDate.getTime(), Date.now() - 71 * 60 * 60 * 1000) * 1000,
+    consent: { ad_user_data: 'GRANTED', ad_personalization: 'GRANTED' },
+    ...(order.customerIp?.trim() ? { ip_override: order.customerIp.trim() } : {}),
+    ...(order.customerUa?.trim() ? { user_agent: order.customerUa.trim() } : {}),
     events: [
       {
         name: 'refund',
         params: {
           transaction_id: order.id,
-          event_id: eventId,
+          event_id: capGa4Param(eventId),
           affiliation: 'Minsah Beauty',
           currency: 'BDT',
           value: refundAmount,
           items,
           engagement_time_msec: 1,
           page_location: `${SITE_URL.replace(/\/$/, '')}/admin/orders/${order.id}`,
-          order_number: order.orderNumber,
-          ga_refund_source: source,
+          order_number: capGa4Param(order.orderNumber),
+          refund_source: source,
           ...(sessionId ? { session_id: sessionId } : {}),
         },
       },
